@@ -33,7 +33,7 @@ def down():
 
 def move_forward():
     get_loc()
-    tim.forward(2)
+    tim.forward(100)
     screen.ontimer(move_forward, 50)
 
 def print_loc(x,y):
@@ -44,9 +44,28 @@ def get_loc():
     tim_x=tim.pos()[0]
     tim_y=tim.pos()[1]
     if tim_x>=370.0:
-        tim.setpos(370.0,tim_y)
+        tim.setpos(369.0,tim_y)
+        wall_collision()
     if tim_x<=-370.0:
-        tim.setpos(-370,tim_y)
+        tim.setpos(-369,tim_y)
+        wall_collision()
+    if tim_y>=210:
+        tim.setpos(tim_x,209)
+        wall_collision()
+    if tim_y<=-205:
+        tim.setpos(tim_x,-204)
+        wall_collision()
+
+def wall_collision():
+    heading=tim.heading()
+    if heading==0:
+        down()
+    if heading==180:
+        up()
+    if heading==90:
+        right()
+    if heading==270:
+        left()
 
 tim = turtle.Turtle()
 tim.color("white")
