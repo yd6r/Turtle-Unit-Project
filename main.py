@@ -14,7 +14,7 @@ def resize_image_to_smaller(input_path, output_path, scale_factor):
         new_height = int(img.height * scale_factor)
         img_resized = img.resize((new_width, new_height))
         img_resized.save(output_path, format="GIF")
-
+resize_image_to_smaller('smallflag.gif','flag.gif',0.2)
 
 def right():
     tim.shape("racerright.gif")
@@ -36,18 +36,19 @@ def move_forward():
     test_for_boundary_coll()
     tim.forward(2)
     for wall in walls:
-        if tim.distance(wall) < 5:
+        if tim.distance(wall) < 16:
             wall_collision(False)
+
     screen.ontimer(move_forward, 50)
 
 def test_for_boundary_coll():
     tim_x = tim.pos()[0]
     tim_y = tim.pos()[1]
-    if tim_x >= 378.0:
-        tim.setpos(377.0, tim_y)
+    if tim_x >= 420.0:
+        tim.setpos(419.0, tim_y)
         wall_collision(True)
-    if tim_x <= -378.0:
-        tim.setpos(-377, tim_y)
+    if tim_x <= -425.0:
+        tim.setpos(-424, tim_y)
         wall_collision(True)
     if tim_y >= 211:
         tim.setpos(tim_x, 210)
@@ -96,48 +97,92 @@ def draw_walls():
     walls = []
 
     # Grid and maze settings
-    cell_size = 40  # Size of each cell of the maze
-    rows = 432 // cell_size  # Number of rows based on screen height
-    cols = 864 // cell_size  # Number of columns based on screen width
+    cell_size = 20
+    rows = 432 // cell_size
+    cols = 864 // cell_size
 
-    # Calculate grid coordinates
+    # Calculate grid coordinates, adding a buffer to y coordinates
     grid = [(x, y) for x in range(-cols // 2 * cell_size, cols // 2 * cell_size, cell_size)
-                    for y in range(-rows // 2 * cell_size, rows // 2 * cell_size, cell_size)]
+                    for y in range(-rows // 2 * cell_size, rows // 2 * cell_size, cell_size*2)]
 
     # Create all walls (fill the screen initially)
     for x, y in grid:
-        wall = create_bouncing_turtle('square', 'green', 1, 2, start_pos=(x, y))
+        wall = create_bouncing_turtle('square', 'green', 1, 1, start_pos=(x, y))
         walls.append(wall)
 
-    # Randomly remove walls to create paths in the maze
-    random.shuffle(walls)  # Shuffle the walls list for randomness
-    num_paths = len(walls) // 2  # Number of walls to remove
-    for _ in range(num_paths):
-        if walls:  # Ensure walls are remaining
-            wall_to_remove = walls.pop()  # Remove one wall
-            wall_to_remove.hideturtle()  # Hide the removed wall
+    #Remove the wall at racer spawn position
+    for wall in walls:
+        if wall.pos()==(0,-60):
+            walls.pop(walls.index(wall))
+            wall.hideturtle()
 
-# Initialize screen and user racer
+    # Randomly remove walls to create paths in the maze
+    random.shuffle(walls)
+    num_paths = len(walls) // 2
+    for _ in range(num_paths):
+        #Ensure walls are remaining, then remove and hide half the walls on screen
+        if walls:
+            wall_to_remove = walls.pop()
+            wall_to_remove.hideturtle()
+
+
+# Initialize screen
+screen = turtle.Screen()
+screen.setup(width=864, height=432)
+
+for image in ['racerup.gif', 'racerdown.gif', 'racerleft.gif',
+              'racerright.gif', 'rallyx_map.gif', 'flag.gif']:
+    screen.register_shape(image)
+
+#Initialize user racer
 tim = turtle.Turtle()
 tim.color("white")
 tim.setheading(90)
 tim.penup()
 tim.goto(0, -50)
-screen = turtle.Screen()
-screen.setup(width=864, height=432)
-
-draw_walls()
-
-for image in ['racerup.gif', 'racerdown.gif', 'racerleft.gif',
-              'racerright.gif', 'rallyx_map.gif']:
-    screen.register_shape(image)
-
 tim.shape("racerup.gif")
+
+#Initialize flags
+
+#Initialize scoreboard
+screen.tracer(0)
+score_bg = turtle.Turtle()
+score_bg.hideturtle()
+score_bg.penup()
+score_bg.goto(510, -88)
+score_bg.pendown()
+score_bg.fillcolor("black")
+score_bg.begin_fill()
+
+# Draw a rectangle for the background
+for _ in range(2):  # 2 pairs of width/height
+    score_bg.forward(60)  # Width
+    score_bg.left(90)
+    score_bg.forward(180)  # Height
+    score_bg.left(90)
+score_bg.end_fill()
+
+# Write the score on top
+score = 0000000
+score_writer = turtle.Turtle()
+score_writer.hideturtle()
+score_writer.penup()
+score_writer.goto(540, 60)  # Adjust text position
+score_writer.pencolor("red")
+score_writer.write("Score: " + str(score), align="center", font=("Courier", 10, "bold"))
+screen.tracer(1)
+screen.update()
+
+#Initialize screen
 screen.bgpic('rallyx_map.gif')
 
 sc = tim.getscreen()
 sc.listen()
-sc.listen()
+
+screen.tracer(0) #Draw the maze walls without animations
+draw_walls()
+screen.update()
+sc.tracer(1) #Turn animations back on
 sc.onkey(up, "Up")
 sc.onkey(down, "Down")
 sc.onkey(left, "Left")
