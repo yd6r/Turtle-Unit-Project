@@ -39,6 +39,11 @@ def move_forward():
         if tim.distance(wall) < 16:
             wall_collision(False)
 
+    for obj in flags:
+        if tim.distance(obj)<5:
+            obj.hideturtle()
+            flags.pop(flags.index(obj))
+            update_score()
     screen.ontimer(move_forward, 50)
 
 def test_for_boundary_coll():
@@ -110,9 +115,10 @@ def draw_walls():
         wall = create_bouncing_turtle('square', 'green', 1, 1, start_pos=(x, y))
         walls.append(wall)
 
-    #Remove the wall at racer spawn position
+    #Remove the wall at racer and flags spawn position
     for wall in walls:
-        if wall.pos()==(0,-60):
+        if wall.pos() in [(0,-60),(100,140),(330,0),(240,-100),(260,180),(260,-100),(-200,180),
+                (-40,-220),(0,60),(-220,180),(-60,-220)]:
             walls.pop(walls.index(wall))
             wall.hideturtle()
 
@@ -124,6 +130,15 @@ def draw_walls():
         if walls:
             wall_to_remove = walls.pop()
             wall_to_remove.hideturtle()
+
+def update_score():
+    global score
+    score+=1
+    score_writer.clear()
+    score_writer.write("Score: " + str(score), align="center", font=("Courier", 8, "bold"))
+    if score==6:
+        while True:
+            time.sleep(1)
 
 
 # Initialize screen
@@ -143,6 +158,14 @@ tim.goto(0, -50)
 tim.shape("racerup.gif")
 
 #Initialize flags
+flags=[]
+
+for pos in [(0,50),(100,134),(330,0),(250,-100),(-212,181),(-50,-200)]:
+    flag=turtle.Turtle()
+    flag.shape('flag.gif')
+    flag.penup()
+    flag.goto(pos)
+    flags.append(flag)
 
 #Initialize scoreboard
 screen.tracer(0)
@@ -163,7 +186,7 @@ for _ in range(2):  # 2 pairs of width/height
 score_bg.end_fill()
 
 # Write the score on top
-score = 0000000
+score = 0
 score_writer = turtle.Turtle()
 score_writer.hideturtle()
 score_writer.penup()
@@ -183,6 +206,7 @@ screen.tracer(0) #Draw the maze walls without animations
 draw_walls()
 screen.update()
 sc.tracer(1) #Turn animations back on
+
 sc.onkey(up, "Up")
 sc.onkey(down, "Down")
 sc.onkey(left, "Left")
