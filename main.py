@@ -137,8 +137,14 @@ def update_score():
     score_writer.clear()
     score_writer.write("Score: " + str(score), align="center", font=("Courier", 8, "bold"))
     if score==6:
+        game_over=turtle.Turtle()
+        game_over.hideturtle()
+        game_over.penup()
         while True:
-            time.sleep(1)
+            color=random.choice(['red','blue'])
+            game_over.pencolor(color)
+            game_over.write("YOU WIN!", align='center', font=('Comic Sans MS', 50, 'bold'))
+            time.sleep(0.2)
 
 
 # Initialize screen
@@ -160,12 +166,15 @@ tim.shape("racerup.gif")
 #Initialize flags
 flags=[]
 
+screen.tracer(0)
 for pos in [(0,50),(100,134),(330,0),(250,-100),(-212,181),(-50,-200)]:
     flag=turtle.Turtle()
     flag.shape('flag.gif')
     flag.penup()
     flag.goto(pos)
     flags.append(flag)
+screen.update()
+screen.tracer(1)
 
 #Initialize scoreboard
 screen.tracer(0)
