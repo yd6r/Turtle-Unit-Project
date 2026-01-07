@@ -3,7 +3,6 @@ import turtle
 import time
 from PIL import Image
 
-
 TURTLE_BASE_SIZE = 20
 TURTLE_SPEED = 2
 
@@ -14,7 +13,6 @@ def resize_image_to_smaller(input_path, output_path, scale_factor):
         new_height = int(img.height * scale_factor)
         img_resized = img.resize((new_width, new_height))
         img_resized.save(output_path, format="GIF")
-resize_image_to_smaller('smallflag.gif','flag.gif',0.2)
 
 def right():
     tim.shape("racerright.gif")
@@ -45,6 +43,37 @@ def move_forward():
             flags.pop(flags.index(obj))
             update_score()
     screen.ontimer(move_forward, 50)
+
+def face_tim(racer):
+    tim_x, tim_y = tim.pos()
+    racer_x, racer_y = racer.pos()
+
+    # Determine the relative position of tim to the racer
+    if tim_y > racer_y:  # tim is above
+        racer.setheading(90)  # Turn up
+    elif tim_y < racer_y:  # tim is below
+        racer.setheading(270)  # Turn down
+    elif tim_x > racer_x:  # tim is to the right
+        racer.setheading(0)  # Turn right
+    elif tim_x < racer_x:  # tim is to the left
+        racer.setheading(180)  # Turn left
+
+def ai_move_forward():
+    global wall_detectors
+    en_racer.forward(2)
+    for wall_detector in wall_detectors:
+        wall_detector.setheading(en_racer.heading())
+        wall_detector.forward(2)
+        count=0
+        for wall in walls:
+            if wall_detector.distance(wall)>10:
+               count+=1
+        if count==len(walls):
+            face_tim(en_racer)
+        if en_racer.distance(tim)<10:
+            game_over()
+
+    screen.ontimer(ai_move_forward,3)
 
 def test_for_boundary_coll():
     tim_x = tim.pos()[0]
@@ -117,8 +146,8 @@ def draw_walls():
 
     #Remove the wall at racer and flags spawn position
     for wall in walls:
-        if wall.pos() in [(0,-60),(100,140),(330,0),(240,-100),(260,180),(260,-100),(-200,180),
-                (-40,-220),(0,60),(-220,180),(-60,-220)]:
+        if wall.pos() in [(100,140),(330,0),(240,-100),(260,180),(260,-100),(-200,180),
+                (-40,-220),(0,60),(-220,180),(-60,-220), (0,-100), (0,-60)]:
             walls.pop(walls.index(wall))
             wall.hideturtle()
 
@@ -131,20 +160,32 @@ def draw_walls():
             wall_to_remove = walls.pop()
             wall_to_remove.hideturtle()
 
+#Increment the score by 1, and if all flags are collected, display "YOU WIN!" in
+#flashing colors
 def update_score():
     global score
-    score+=1
+    score+=1 #Increment the score
     score_writer.clear()
-    score_writer.write("Score: " + str(score), align="center", font=("Courier", 8, "bold"))
-    if score==6:
-        game_over=turtle.Turtle()
-        game_over.hideturtle()
-        game_over.penup()
+    score_writer.write("Score:" + str(score), align="center", font=("Courier", 8, "bold"))
+    if score==6: #If all flags are collected, display flashing game over screen
+        win=turtle.Turtle()
+        win.hideturtle()
+        color=0
         while True:
-            color=random.choice(['red','blue'])
-            game_over.pencolor(color)
-            game_over.write("YOU WIN!", align='center', font=('Comic Sans MS', 50, 'bold'))
-            time.sleep(0.2)
+            color+=1
+            if color%2==0:
+                win.pencolor('blue')
+            else:
+                win.pencolor('red')
+            win.write("YOU WIN!", align='center', font=('Comic Sans MS', 50, 'bold'))
+            time.sleep(0.5)
+
+def game_over():
+    lose=turtle.Turtle()
+    lose.hideturtle()
+    lose.write("YOU LOSE", align='center', font=('Comic Sans MS', 50, 'bold'))
+    while True:
+        time.sleep(500)
 
 
 # Initialize screen
@@ -152,16 +193,30 @@ screen = turtle.Screen()
 screen.setup(width=864, height=432)
 
 for image in ['racerup.gif', 'racerdown.gif', 'racerleft.gif',
-              'racerright.gif', 'rallyx_map.gif', 'flag.gif']:
+              'racerright.gif', 'rallyx_map.gif', 'flag.gif', 'enemyracer.gif']:
     screen.register_shape(image)
 
-#Initialize user racer
+#Initialize racers
 tim = turtle.Turtle()
-tim.color("white")
 tim.setheading(90)
 tim.penup()
 tim.goto(0, -50)
 tim.shape("racerup.gif")
+
+en_racer=turtle.Turtle()
+en_racer.setheading(90)
+en_racer.penup()
+en_racer.goto(0,-100)
+en_racer.shape('enemyracer.gif')
+
+wall_detectors=[]
+for pos in [(0,-85),(10,-95),(-10,-95)]:
+    wall_detector=turtle.Turtle()
+    wall_detector.penup()
+    wall_detector.goto(pos)
+    wall_detector.setheading(90)
+    wall_detector.hideturtle()
+    wall_detectors.append(wall_detector)
 
 #Initialize flags
 flags=[]
@@ -176,7 +231,7 @@ for pos in [(0,50),(100,134),(330,0),(250,-100),(-212,181),(-50,-200)]:
 screen.update()
 screen.tracer(1)
 
-#Initialize scoreboard
+#Draw scoreboard
 screen.tracer(0)
 score_bg = turtle.Turtle()
 score_bg.hideturtle()
@@ -222,5 +277,6 @@ sc.onkey(left, "Left")
 sc.onkey(right, "Right")
 
 move_forward()
+ai_move_forward() #Begin game loop
 
 turtle.mainloop()
