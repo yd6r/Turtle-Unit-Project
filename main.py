@@ -14,28 +14,32 @@ def resize_image_to_smaller(input_path, output_path, scale_factor):
         img_resized = img.resize((new_width, new_height))
         img_resized.save(output_path, format="GIF")
 
-def right():
-    tim.shape("racerright.gif")
-    tim.setheading(0)
+def right(racer):
+    if racer==tim:
+        tim.shape("racerright.gif")
+    racer.setheading(0)
 
-def left():
-    tim.shape("racerleft.gif")
-    tim.setheading(180)
+def left(racer):
+    if racer==tim:
+        tim.shape("racerleft.gif")
+    racer.setheading(180)
 
-def up():
-    tim.shape("racerup.gif")
-    tim.setheading(90)
+def up(racer):
+    if racer==tim:
+        tim.shape("racerup.gif")
+    racer.setheading(90)
 
-def down():
-    tim.shape("racerdown.gif")
-    tim.setheading(270)
+def down(racer):
+    if racer==tim:
+        tim.shape("racerdown.gif")
+    racer.setheading(270)
 
 def move_forward():
     test_for_boundary_coll()
     tim.forward(2)
     for wall in walls:
         if tim.distance(wall) < 16:
-            wall_collision(False)
+            wall_collision(False, tim)
 
     for obj in flags:
         if tim.distance(obj)<5:
@@ -49,9 +53,9 @@ def face_tim(racer):
     racer_x, racer_y = racer.pos()
 
     # Determine the relative position of tim to the racer
-    if tim_y > racer_y:  # tim is above
+    if tim_y-5 > racer_y:  # tim is above
         racer.setheading(90)  # Turn up
-    elif tim_y < racer_y:  # tim is below
+    elif tim_y+5 < racer_y:  # tim is below
         racer.setheading(270)  # Turn down
     elif tim_x > racer_x:  # tim is to the right
         racer.setheading(0)  # Turn right
@@ -66,10 +70,12 @@ def ai_move_forward():
         wall_detector.forward(2)
         count=0
         for wall in walls:
-            if wall_detector.distance(wall)>10:
+            if wall_detector.distance(wall)>3:
                count+=1
         if count==len(walls):
             face_tim(en_racer)
+        else:
+            wall_collision(False, en_racer)
         if en_racer.distance(tim)<10:
             game_over()
 
@@ -80,36 +86,36 @@ def test_for_boundary_coll():
     tim_y = tim.pos()[1]
     if tim_x >= 420.0:
         tim.setpos(419.0, tim_y)
-        wall_collision(True)
+        wall_collision(True, tim)
     if tim_x <= -425.0:
         tim.setpos(-424, tim_y)
-        wall_collision(True)
+        wall_collision(True, tim)
     if tim_y >= 211:
         tim.setpos(tim_x, 210)
-        wall_collision(True)
+        wall_collision(True, tim)
     if tim_y <= -205:
         tim.setpos(tim_x, -204)
-        wall_collision(True)
+        wall_collision(True, tim)
 
-def wall_collision(is_boundary):
-    heading = tim.heading()
-    pos = tim.pos()
+def wall_collision(is_boundary, racer):
+    heading = racer.heading()
+    pos = racer.pos()
     if heading == 0:
         if not is_boundary:
-            tim.setpos(pos[0] - 2, pos[1])
-        down()
+            racer.setpos(pos[0] - 2, pos[1])
+        down(racer)
     if heading == 180:
         if not is_boundary:
-            tim.setpos(pos[0] + 2, pos[1])
-        up()
+            racer.setpos(pos[0] + 2, pos[1])
+        up(racer)
     if heading == 90:
         if not is_boundary:
-            tim.setpos(pos[0], pos[1] - 2)
-        right()
+            racer.setpos(pos[0], pos[1] - 2)
+        right(racer)
     if heading == 270:
         if not is_boundary:
-            tim.setpos(pos[0], pos[1] + 2)
-        left()
+            racer.setpos(pos[0], pos[1] + 2)
+        left(racer)
 
 # Function to create a turtle and calculate its effective collision radius
 def create_bouncing_turtle(shape, color, size_x, size_y=None, start_pos=(0, 0), heading=0):
@@ -271,10 +277,10 @@ draw_walls()
 screen.update()
 sc.tracer(1) #Turn animations back on
 
-sc.onkey(up, "Up")
-sc.onkey(down, "Down")
-sc.onkey(left, "Left")
-sc.onkey(right, "Right")
+sc.onkey(lambda: up(tim), "Up")
+sc.onkey(lambda: down(tim), "Down")
+sc.onkey(lambda: left(tim), "Left")
+sc.onkey(lambda: right(tim), "Right")
 
 move_forward()
 ai_move_forward() #Begin game loop
