@@ -14,22 +14,30 @@ def resize_image_to_smaller(input_path, output_path, scale_factor):
         img_resized = img.resize((new_width, new_height))
         img_resized.save(output_path, format="GIF")
 
+resize_image_to_smaller('enemyracerright0.gif','smallenemyracerright0.gif', 0.05)
+
 def right(racer):
     if racer==tim:
         tim.shape("racerright.gif")
+    elif racer==en_racer:
+        print("right")
+        en_racer.shape('smallenemyracerright0.gif')
     racer.setheading(0)
 
 def left(racer):
+    print("left")
     if racer==tim:
         tim.shape("racerleft.gif")
     racer.setheading(180)
 
 def up(racer):
+    print("up")
     if racer==tim:
         tim.shape("racerup.gif")
     racer.setheading(90)
 
 def down(racer):
+    print("down")
     if racer==tim:
         tim.shape("racerdown.gif")
     racer.setheading(270)
@@ -51,16 +59,16 @@ def move_forward():
 def face_tim(racer):
     tim_x, tim_y = tim.pos()
     racer_x, racer_y = racer.pos()
-
+    print("face_tim")
     # Determine the relative position of tim to the racer
     if tim_y-5 > racer_y:  # tim is above
-        racer.setheading(90)  # Turn up
+        en_racer.setheading(90)  # Turn up
     elif tim_y+5 < racer_y:  # tim is below
-        racer.setheading(270)  # Turn down
+        en_racer.setheading(270) # Turn down
     elif tim_x > racer_x:  # tim is to the right
-        racer.setheading(0)  # Turn right
+        en_racer.setheading(0)  # Turn right
     elif tim_x < racer_x:  # tim is to the left
-        racer.setheading(180)  # Turn left
+        en_racer.setheading(180)  # Turn left
 
 def ai_move_forward():
     global wall_detectors
@@ -76,10 +84,11 @@ def ai_move_forward():
             face_tim(en_racer)
         else:
             wall_collision(False, en_racer)
+            en_racer.goto(en_racer.pos()[0]+30,en_racer.pos()[1])
         if en_racer.distance(tim)<10:
             game_over()
 
-    screen.ontimer(ai_move_forward,3)
+    screen.ontimer(ai_move_forward,1)
 
 def test_for_boundary_coll():
     tim_x = tim.pos()[0]
@@ -199,7 +208,7 @@ screen = turtle.Screen()
 screen.setup(width=864, height=432)
 
 for image in ['racerup.gif', 'racerdown.gif', 'racerleft.gif',
-              'racerright.gif', 'rallyx_map.gif', 'flag.gif', 'enemyracer.gif']:
+              'racerright.gif', 'rallyx_map.gif', 'flag.gif', 'smallenemyracerright0.gif', "enemyracer.gif"]:
     screen.register_shape(image)
 
 #Initialize racers
@@ -248,10 +257,10 @@ score_bg.fillcolor("black")
 score_bg.begin_fill()
 
 # Draw a rectangle for the background
-for _ in range(2):  # 2 pairs of width/height
-    score_bg.forward(60)  # Width
+for _ in range(2):
+    score_bg.forward(60)
     score_bg.left(90)
-    score_bg.forward(180)  # Height
+    score_bg.forward(180)
     score_bg.left(90)
 score_bg.end_fill()
 
@@ -277,6 +286,7 @@ draw_walls()
 screen.update()
 sc.tracer(1) #Turn animations back on
 
+#Link arrow keys to user racer movement
 sc.onkey(lambda: up(tim), "Up")
 sc.onkey(lambda: down(tim), "Down")
 sc.onkey(lambda: left(tim), "Left")
