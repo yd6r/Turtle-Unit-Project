@@ -19,25 +19,19 @@ resize_image_to_smaller('enemyracerright0.gif','smallenemyracerright0.gif', 0.05
 def right(racer):
     if racer==tim:
         tim.shape("racerright.gif")
-    elif racer==en_racer:
-        print("right")
-        en_racer.shape('smallenemyracerright0.gif')
     racer.setheading(0)
 
 def left(racer):
-    print("left")
     if racer==tim:
         tim.shape("racerleft.gif")
     racer.setheading(180)
 
 def up(racer):
-    print("up")
     if racer==tim:
         tim.shape("racerup.gif")
     racer.setheading(90)
 
 def down(racer):
-    print("down")
     if racer==tim:
         tim.shape("racerdown.gif")
     racer.setheading(270)
@@ -59,7 +53,6 @@ def move_forward():
 def face_tim(racer):
     tim_x, tim_y = tim.pos()
     racer_x, racer_y = racer.pos()
-    print("face_tim")
     # Determine the relative position of tim to the racer
     if tim_y-5 > racer_y:  # tim is above
         en_racer.setheading(90)  # Turn up
@@ -70,25 +63,127 @@ def face_tim(racer):
     elif tim_x < racer_x:  # tim is to the left
         en_racer.setheading(180)  # Turn left
 
-def ai_move_forward():
-    global wall_detectors
-    en_racer.forward(2)
-    for wall_detector in wall_detectors:
-        wall_detector.setheading(en_racer.heading())
-        wall_detector.forward(2)
-        count=0
-        for wall in walls:
-            if wall_detector.distance(wall)>3:
-               count+=1
-        if count==len(walls):
-            face_tim(en_racer)
-        else:
-            wall_collision(False, en_racer)
-            en_racer.goto(en_racer.pos()[0]+30,en_racer.pos()[1])
-        if en_racer.distance(tim)<10:
-            game_over()
+def is_intersection(racer):
+    """
+    Checks if the racer (enemy) is at an intersection by examining available open paths.
+    :param racer: The turtle (en_racer) whose position is being checked.
+    :return: True if at an intersection, otherwise False.
+    """
+    open_paths = []
+    directions = [0, 90, 180, 270]  # Right, Up, Left, Down
+    racer_x, racer_y = racer.pos()
 
-    screen.ontimer(ai_move_forward,1)
+    for direction in directions:
+        # Compute potential position in the specified direction
+        if direction == 0:  # Moving right
+            tester_x, tester_y = racer_x + 20, racer_y
+        elif direction == 90:  # Moving up
+            tester_x, tester_y = racer_x, racer_y + 20
+        elif direction == 180:  # Moving left
+            tester_x, tester_y = racer_x - 20, racer_y
+        elif direction == 270:  # Moving down
+            tester_x, tester_y = racer_x, racer_y - 20
+
+        # Check for walls nearby that would block this direction
+        collision = False
+        for wall in walls:
+            if wall.distance(tester_x, tester_y) < 10:  # Check collision threshold
+                collision = True
+                break
+
+        if not collision:
+            open_paths.append(direction)
+
+    return len(open_paths) > 1  # Intersection if more than one open path exists
+
+
+def decide_direction(racer):
+    """
+    Decides the next direction (heading) for the racer based on Tim's position.
+    Prioritizes the direction that brings the racer closer to Tim.
+    """
+    directions_and_distances = []
+    tim_x, tim_y = tim.pos()
+    racer_x, racer_y = racer.pos()
+
+    # Check all 4 directions, calculate distance to Tim, and check for walls
+    for direction in [0, 90, 180, 270]:  # Right, Up, Left, Down
+        if direction == 0:  # Right
+            tester_x, tester_y = racer_x + 20, racer_y
+        elif direction == 90:  # Up
+            tester_x, tester_y = racer_x, racer_y + 20
+        elif direction == 180:  # Left
+            tester_x, tester_y = racer_x - 20, racer_y
+        elif direction == 270:  # Down
+            tester_x, tester_y = racer_x, racer_y - 20
+
+        # Check for walls in this direction
+        collision = False
+        for wall in walls:
+            if wall.distance(tester_x, tester_y) < 10:
+                collision = True
+                break
+
+        if not collision:
+            # Calculate distance to Tim if this direction is open
+            distance_to_tim = ((tim_x - tester_x) ** 2 + (tim_y - tester_y) ** 2) ** 0.5
+            directions_and_distances.append((direction, distance_to_tim))
+
+    # Sort directions by the shortest distance to Tim
+    if directions_and_distances:
+        directions_and_distances.sort(key=lambda x: x[1])  # Sort by distance
+        return directions_and_distances[0][0]  # Return the best direction (heading)
+    else:
+        return None  # No valid direction
+
+
+def ai_move_forward():
+    """
+    Controls the movement of the enemy racer (en_racer).
+    Handles intersections, wall collisions, and following Tim.
+    """
+    # Check if Tim is close
+    if en_racer.distance(tim) < 10:
+        game_over()
+
+    en_racer.forward(4)
+
+    if is_intersection(en_racer):
+        # At an intersection, decide the best direction
+        new_direction = decide_direction(en_racer)
+        if new_direction is not None:
+            en_racer.setheading(new_direction)
+    else:
+        # Check for wall collisions during movement
+        racer_x, racer_y = en_racer.pos()
+        collision = False
+
+        # Predict next step forward
+        if en_racer.heading() == 0:  # Right
+            next_x, next_y = racer_x + 2, racer_y
+        elif en_racer.heading() == 90:  # Up
+            next_x, next_y = racer_x, racer_y + 2
+        elif en_racer.heading() == 180:  # Left
+            next_x, next_y = racer_x - 2, racer_y
+        elif en_racer.heading() == 270:  # Down
+            next_x, next_y = racer_x, racer_y - 2
+        else:
+            next_x, next_y = racer_x, racer_y
+
+        # Check if the next step hits a wall
+        for wall in walls:
+            if wall.distance(next_x, next_y) < 10:
+                collision = True
+                break
+
+        if collision:
+            # Follow along the wall in Tim's general direction
+            new_direction = decide_direction(en_racer)
+            if new_direction is not None:
+                en_racer.setheading(new_direction)
+
+    # Continue moving with a short delay
+    screen.ontimer(ai_move_forward, 50)
 
 def test_for_boundary_coll():
     tim_x = tim.pos()[0]
@@ -109,22 +204,28 @@ def test_for_boundary_coll():
 def wall_collision(is_boundary, racer):
     heading = racer.heading()
     pos = racer.pos()
-    if heading == 0:
-        if not is_boundary:
-            racer.setpos(pos[0] - 2, pos[1])
-        down(racer)
-    if heading == 180:
-        if not is_boundary:
-            racer.setpos(pos[0] + 2, pos[1])
-        up(racer)
-    if heading == 90:
-        if not is_boundary:
-            racer.setpos(pos[0], pos[1] - 2)
-        right(racer)
-    if heading == 270:
-        if not is_boundary:
-            racer.setpos(pos[0], pos[1] + 2)
-        left(racer)
+    if racer==tim:
+        if heading == 0:
+            if not is_boundary:
+                racer.setpos(pos[0] - 2, pos[1])
+            down(racer)
+        if heading == 180:
+            if not is_boundary:
+                racer.setpos(pos[0] + 2, pos[1])
+            up(racer)
+        if heading == 90:
+            if not is_boundary:
+                racer.setpos(pos[0], pos[1] - 2)
+            right(racer)
+        if heading == 270:
+            if not is_boundary:
+                racer.setpos(pos[0], pos[1] + 2)
+            left(racer)
+    else:
+        if tim.pos()[0] > en_racer.pos()[0]:  # tim is to the right
+            en_racer.setheading(0)  # Turn right
+        elif tim.pos()[0] < en_racer.pos()[0]:  # tim is to the left
+            en_racer.setheading(180)  # Turn left
 
 # Function to create a turtle and calculate its effective collision radius
 def create_bouncing_turtle(shape, color, size_x, size_y=None, start_pos=(0, 0), heading=0):
@@ -159,11 +260,12 @@ def draw_walls():
         wall = create_bouncing_turtle('square', 'green', 1, 1, start_pos=(x, y))
         walls.append(wall)
 
+
     #Remove the wall at racer and flags spawn position
     for wall in walls:
-        if wall.pos() in [(100,140),(330,0),(240,-100),(260,180),(260,-100),(-200,180),
+        if wall.distance(0,-50) < 20 or wall.pos() in [(100,140),(330,0),(240,-100),(260,180),(260,-100),(-200,180),
                 (-40,-220),(0,60),(-220,180),(-60,-220), (0,-100), (0,-60)]:
-            walls.pop(walls.index(wall))
+            walls.remove(wall)
             wall.hideturtle()
 
     # Randomly remove walls to create paths in the maze
@@ -222,16 +324,7 @@ en_racer=turtle.Turtle()
 en_racer.setheading(90)
 en_racer.penup()
 en_racer.goto(0,-100)
-en_racer.shape('enemyracer.gif')
-
-wall_detectors=[]
-for pos in [(0,-85),(10,-95),(-10,-95)]:
-    wall_detector=turtle.Turtle()
-    wall_detector.penup()
-    wall_detector.goto(pos)
-    wall_detector.setheading(90)
-    wall_detector.hideturtle()
-    wall_detectors.append(wall_detector)
+en_racer.shape("enemyracer.gif")
 
 #Initialize flags
 flags=[]
