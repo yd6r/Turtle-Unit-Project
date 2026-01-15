@@ -125,54 +125,53 @@ def decide_direction(racer):
     else:
         return None  # No valid direction
 
-#Controls the movement of enemy racer, handling wall interactions and following tim
+#Controls the movement of enemy racer, handling wall interactions and following tim until tim wins or loses
 def ai_move_forward():
-    #Check if tim won
-    if score==6:
-        while True:
-            time.sleep(0)
-
-    # Check if tim is close
-    if en_racer.distance(tim) < 15:
-        game_over()
-
-    en_racer.forward(4) #Move racer forwards
-    if is_intersection(en_racer):
-        # At an intersection, decide the best direction
-        new_direction = decide_direction(en_racer)
-        if new_direction is not None:
-            en_racer.setheading(new_direction)
+    #Freeze enemy if ai won
+    if score==1:
+        return
     else:
-        # Check for wall collisions during movement
-        racer_x, racer_y = en_racer.pos()
-        collision = False
+        # Check if tim is close
+        if en_racer.distance(tim) < 15:
+            game_over()
 
-        # Predict next step forward
-        if en_racer.heading() == 0:  # Right
-            next_x, next_y = racer_x + 2, racer_y
-        elif en_racer.heading() == 90:  # Up
-            next_x, next_y = racer_x, racer_y + 2
-        elif en_racer.heading() == 180:  # Left
-            next_x, next_y = racer_x - 2, racer_y
-        elif en_racer.heading() == 270:  # Down
-            next_x, next_y = racer_x, racer_y - 2
-        else:
-            next_x, next_y = racer_x, racer_y
-
-        # Check if the next step hits a wall
-        for wall in walls:
-            if wall.distance(next_x, next_y) < 19:
-                collision = True
-                break
-
-        if collision:
-            # Follow along the wall in Tim's general direction
+        en_racer.forward(4) #Move racer forwards
+        if is_intersection(en_racer):
+            # At an intersection, decide the best direction
             new_direction = decide_direction(en_racer)
             if new_direction is not None:
                 en_racer.setheading(new_direction)
+        else:
+            # Check for wall collisions during movement
+            racer_x, racer_y = en_racer.pos()
+            collision = False
 
-    # Continue moving with a short delay
-    screen.ontimer(ai_move_forward, enemy_speed)
+            # Predict next step forward
+            if en_racer.heading() == 0:  # Right
+                next_x, next_y = racer_x + 2, racer_y
+            elif en_racer.heading() == 90:  # Up
+                next_x, next_y = racer_x, racer_y + 2
+            elif en_racer.heading() == 180:  # Left
+                next_x, next_y = racer_x - 2, racer_y
+            elif en_racer.heading() == 270:  # Down
+                next_x, next_y = racer_x, racer_y - 2
+            else:
+                next_x, next_y = racer_x, racer_y
+
+            # Check if the next step hits a wall
+            for wall in walls:
+                if wall.distance(next_x, next_y) < 19:
+                    collision = True
+                    break
+
+            if collision:
+                # Follow along the wall in Tim's general direction
+                new_direction = decide_direction(en_racer)
+                if new_direction is not None:
+                    en_racer.setheading(new_direction)
+
+        # Continue moving with a short delay
+        screen.ontimer(ai_move_forward, enemy_speed)
 
 def test_for_boundary_coll():
     tim_x = tim.pos()[0]
@@ -249,7 +248,6 @@ def draw_walls():
         wall = create_bouncing_turtle('square', 'green', 1, 1, start_pos=(x, y))
         walls.append(wall)
 
-
     #Remove the wall at racer and flags spawn position
     walls_to_remove=[]
     for wall in walls:
@@ -275,7 +273,7 @@ def update_score():
     score+=1 #Increment the score
     score_writer.clear()
     score_writer.write("Score:" + str(score), align="center", font=("Courier", 8, "bold"))
-    if score==6: #If all flags are collected, display flashing game over screen
+    if score==1: #If all flags are collected, display flashing win screen
         win=turtle.Turtle()
         win.hideturtle()
         color=0
