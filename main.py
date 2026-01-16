@@ -1,8 +1,6 @@
 import random
 import turtle
 import time
-from turtledemo.penrose import start
-
 from PIL import Image
 
 # Resize an image
@@ -127,8 +125,8 @@ def decide_direction(racer):
 
 #Controls the movement of enemy racer, handling wall interactions and following tim until tim wins or loses
 def ai_move_forward():
-    #Freeze enemy if ai won
-    if score==1:
+    #Freeze enemy if tim won
+    if score==6:
         return
     else:
         # Check if tim is close
@@ -273,7 +271,7 @@ def update_score():
     score+=1 #Increment the score
     score_writer.clear()
     score_writer.write("Score:" + str(score), align="center", font=("Courier", 8, "bold"))
-    if score==1: #If all flags are collected, display flashing win screen
+    if score==6: #If all flags are collected, display flashing win screen
         win=turtle.Turtle()
         win.hideturtle()
         color=0
@@ -361,7 +359,7 @@ screen.bgpic('rallyx_map.gif')
 
 sc = tim.getscreen()
 
-screen.tracer(0) #Draw the maze walls without animations
+screen.tracer(50) #Draw the maze walls without animations
 draw_walls()
 screen.update()
 sc.tracer(1) #Turn animations back on
